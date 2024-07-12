@@ -1,0 +1,16 @@
+extractor.page:
+  path: '/extractor'
+  defaults:
+    _controller: '\Drupal\extractor\Controller\ExtractorController::content'
+  requirements:
+    _permission: 'access content'
+
+
+
+extractor.upload:
+  path: '/extractor/upload'
+  defaults:
+    _controller: '\Drupal\extractor\Controller\ExtractorController::upload'
+  requirements:
+    _permission: 'access content'
+  methods: [POST]

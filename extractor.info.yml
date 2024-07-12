@@ -1,0 +1,5 @@
+name: 'Extractor'
+type: module
+description: 'A simple module to demonstrate page rendering in Drupal.'
+core_version_requirement: ^8 || ^9 || ^10
+package: Custom
