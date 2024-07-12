@@ -7,7 +7,7 @@ use Drupal\Core\Controller\ControllerBase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use PhpOffice\PhpSpreadsheet\IOFactory;
-
+use Drupal\Core\Database\Database;
 /**
  * Controller for handling file upload and processing.
  */
@@ -55,12 +55,34 @@ class ExtractorController extends ControllerBase {
         }
         $data[] = $rowData;
       }
-
+      // Запись данных в базу данных Drupal
+      $this->saveDataToDatabase($data);
       // Возвращаем JSON ответ с данными
       return new JsonResponse($data);
     } catch (\Exception $e) {
       // В случае ошибки возвращаем JSON ответ с сообщением об ошибке
       return new JsonResponse(['message' => 'Error processing file'], 500);
+    }
+  }
+
+  // функция сохранения данных в бд. (не прописана в routing.yml для исключения sql-иньекций)
+
+  private function saveDataToDatabase($data) {
+
+    // Подключение к базе данных Drupal
+    $connection = Database::getConnection();
+
+    // Итерируемся по данным и вставляем каждую запись в таблицу employees
+    foreach ($data as $employee) {
+      $connection->insert('employees')
+        ->fields([
+          'name' => $employee[0],
+          'sec_name' => $employee[1],
+          'thrd_name' => $employee[2],
+          'age' => $employee[3],
+          'position' => $employee[4],
+        ])
+        ->execute();
     }
   }
 
