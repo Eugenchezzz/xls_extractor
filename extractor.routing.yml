@@ -1,3 +1,4 @@
+
 extractor.page:
   path: '/extractor'
   defaults:
@@ -6,7 +7,7 @@ extractor.page:
     _permission: 'access content'
 
 
-
+# обозначение маршрута для вызова функции обработки запроса на импорт со стороны сервера
 extractor.upload:
   path: '/extractor/upload'
   defaults:

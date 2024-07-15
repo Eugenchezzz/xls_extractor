@@ -3,87 +3,81 @@
 namespace Drupal\extractor\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
-
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Drupal\Core\Database\Database;
-/**
- * Controller for handling file upload and processing.
- */
+
 class ExtractorController extends ControllerBase {
 
+  // функция рендера страницы extractor-page.html.twig
   public function content() {
     return [
       '#theme' => 'extractor_page',
     ];
   }
-  /**
-   * Handles file upload and returns JSON response with data from uploaded XLS file.
-   */
+
+  // функция обработки нажатия на стороне сервера
   public function upload(Request $request) {
-    // Проверяем, что файл был загружен
+
+    // проверка на загрузку файла
     if (!$request->files->has('file')) {
-      return new JsonResponse(['message' => 'No file uploaded'], 400);
+      return new JsonResponse(['message' => 'Файл не загружен!'], 400);
     }
 
     $file = $request->files->get('file');
 
-    // Проверяем ошибки загрузки файла
+    // проверка ошибок загрузки файла
     if ($file->getError() !== UPLOAD_ERR_OK) {
-      return new JsonResponse(['message' => 'File upload error'], 400);
+      return new JsonResponse(['message' => 'Ошибка загрузки файла'], 400);
     }
 
-    // Получаем временный путь загруженного файла
+    // получение пути (временного) загружаемого файла
     $tempPath = $file->getRealPath();
 
-    // Обработка загруженного файла с использованием PhpSpreadsheet
+    // обработка загруженного файла с использованием PhpSpreadsheet
     try {
       $spreadsheet = IOFactory::load($tempPath);
 
-      // Получаем третий лист (нумерация начинается с 0)
+      // получение третьего листа (нумерация начинается с 0)
       $sheet = $spreadsheet->getSheet(2);
 
+      // создание подключения к бд единожды
+      $connection = Database::getConnection();
       // Читаем данные из листа, пропуская первую строку (индексация строк начинается с 1)
-      $data = [];
-      foreach ($sheet->getRowIterator(2) as $row) { // RowIterator(2) начинает с третьей строки
+      foreach ($sheet->getRowIterator(2) as $row) { // RowIterator(2) начинает со второй строки
         $cellIterator = $row->getCellIterator();
         $cellIterator->setIterateOnlyExistingCells(false);
         $rowData = [];
         foreach ($cellIterator as $cell) {
           $rowData[] = $cell->getValue();
         }
-        $data[] = $rowData;
+        // вставка данных в базу данных сразу после их извлечения
+        $this->saveRowToDatabase($rowData, $connection);
       }
-      // Запись данных в базу данных Drupal
-      $this->saveDataToDatabase($data);
-      // Возвращаем JSON ответ с данными
-      return new JsonResponse($data);
+      // явное закрытие соединения
+      $connection = null;
+
+      // возврат JSON ответа с данными
+      return new JsonResponse(['message' => 'Данные успешно загружены в базу данных!']);
     } catch (\Exception $e) {
-      // В случае ошибки возвращаем JSON ответ с сообщением об ошибке
-      return new JsonResponse(['message' => 'Error processing file'], 500);
+      // в случае ошибки возврат JSON ответа с сообщением об ошибке
+      return new JsonResponse(['message' => 'Ошибка обработки файла'], 500);
     }
   }
 
-  // функция сохранения данных в бд. (не прописана в routing.yml для исключения sql-иньекций)
+  // функция сохранения данных в бд. private - так как вызывается исключительно из других функций класса ExtractorController
+  private function saveRowToDatabase($rowData, $connection) {
+    // поочередное добавление каждого кортежа данных в бд
 
-  private function saveDataToDatabase($data) {
-
-    // Подключение к базе данных Drupal
-    $connection = Database::getConnection();
-
-    // Итерируемся по данным и вставляем каждую запись в таблицу employees
-    foreach ($data as $employee) {
-      $connection->insert('employees')
-        ->fields([
-          'name' => $employee[0],
-          'sec_name' => $employee[1],
-          'thrd_name' => $employee[2],
-          'age' => $employee[3],
-          'position' => $employee[4],
-        ])
-        ->execute();
-    }
+    $connection->insert('employees') // при необходимости изменить тут название базы данных
+      ->fields([
+        'first_name' => $rowData[0],
+        'last_name' => $rowData[1],
+        'middle_name' => $rowData[2],
+        'age' => $rowData[3],
+        'position' => $rowData[4],
+      ])
+      ->execute();
   }
-
 }

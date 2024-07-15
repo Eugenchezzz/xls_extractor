@@ -1,5 +1,6 @@
 name: 'Extractor'
 type: module
-description: 'A simple module to demonstrate page rendering in Drupal.'
+description: 'Импорт данных в бд из третьего листа файла xls'
 core_version_requirement: ^8 || ^9 || ^10
 package: Custom
+author: "Evgeniy E"

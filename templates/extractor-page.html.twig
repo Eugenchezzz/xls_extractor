@@ -1,33 +1,38 @@
-<!DOCTYPE html>
-    <h2>Upload a File</h2>
+<div style="border:solid 2px black; display:grid; place-items: center; font-family: 'Bahnschrift';">
+    <h2>Выберите файл для импорта данных</h2>
 
+    {# форма с кнопками загрузки файла и его отправки #}
     <form id="file-upload-form" enctype="multipart/form-data">
         <input type="file" id="file-input" name="file" accept=".xls,.xlsx">
-        <button type="button" onclick="uploadFile()">Upload</button>
+        <button type="button" onclick="uploadFile()">Загрузить</button>
     </form>
 
-    <div id="response"></div>
+    <br>
+</div>
 
     <script>
+        // функция обработки нажатия на стороне клиента (отправка запроса и передача данных о файле)
         function uploadFile() {
             var fileInput = document.getElementById('file-input');
             if (fileInput.files.length > 0) {
                 var formData = new FormData();
                 formData.append('file', fileInput.files[0]);
 
-                fetch(' {{ path('extractor.upload') }} ', {
+                // fetch запрос и обработчики ошибок
+                fetch(' {{ path('extractor.upload') }} ', {       // path('extractor.upload') -- путь для вызова функции обработки контроллера (прописана в routing)
                     method: 'POST',
                     body: formData,
                 })
+                // обработка полученных данных в формате json
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('response').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                  alert(data.message);
                 })
                 .catch(error => {
                     console.error('Error:', error);
                 });
             } else {
-                alert('Please select a file.');
+                alert('Пожалуйста, выберите файл');
             }
         }
     </script>

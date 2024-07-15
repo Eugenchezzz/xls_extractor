@@ -8,6 +8,7 @@
 /**
  * Implements hook_theme().
  */
+
 function extractor_theme($existing, $type, $theme, $path) {
   return [
     'extractor_page' => [
